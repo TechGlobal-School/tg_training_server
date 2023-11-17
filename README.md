@@ -9,7 +9,7 @@ Scripts:
 
 -   TBD
 
-### Contrubitors
+### Contributors
 
 [Altay Ozyavas](https://github.com/altayozyavas) |
 [Burak Simsek](https://github.com/buraksimsekgit) |

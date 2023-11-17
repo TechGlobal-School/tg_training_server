@@ -72,9 +72,10 @@ router.route("/students/").get(function (request, response) {
         console.log("RESULTSET:" + JSON.stringify(result));
         let students = [];
         result.rows.forEach(function (element) {
+          const dob = element.DOB;
           students.push({
             id: element.ID,
-            dob: element.DOB,
+            dob: `${dob.getFullYear()} - ${dob.getMonth() + 1} - ${dob.getDate()}`,
             email: element.EMAIL,
             firstName: element.FIRST_NAME,
             lastName: element.LAST_NAME,
@@ -154,37 +155,69 @@ router.route("/students").post(function (request, response) {
 
     connection.execute(
       "INSERT INTO STUDENT_2 (ID, DOB, EMAIL, FIRST_NAME, LAST_NAME)" +
-        "VALUES(STUDENT_2_SEQ.NEXTVAL, :dob,:email,:firstName,:lastName)",
+        "VALUES(STUDENT_2_SEQ.NEXTVAL, TO_DATE(:dob,'YYYY-MM-DD'),:email,:firstName,:lastName)",
       [dob, email, firstName, lastName],
       function (err, result) {
         if (err) {
-          console.log("body:", student);
-          console.error("err:", JSON.stringify(err));
+          console.error("err:", err);
           if (err.errorNum === 1) {
             response.status(409).send({
               message: "The email you have entered is already in use!",
             });
           } else if (err.errorNum === 1400) {
             response.status(400).send({
-              message: "Missing field! Please fill all parameters and try again!",
+              message:
+                "Missing field! Please fill all parameters and try again!",
             });
           } else if (err.errorNum === 2290) {
             response.status(400).send({
-              message: "Invalid character in the field.",
+              message: !email.match(/[a-z0-9\-]+@[a-z]+\.[a-z]{2,3}/)
+                ? "Invalid email format. The expected format is <2+chars>@<2+chars>.<2+chars> and only digits, letters, and @.-_ characters are allowed."
+                : "Invalid character in the field.",
             });
-          } else if(!email.matches(/[\\w.-]{2,}@[\\w.-]{2,}\\.[\\w.-]{2,}/)){
-            // response.status(400).send({
-            //   message: "Invalid email format. The expected format is <2+chars>@<2+chars>.<2+chars> and only digits, letters, and @.-_ characters are allowed.",
-            // });
+          } else if (err.errorNum === 20001) {
+            response.status(400).send({
+              message:
+                "Invalid date. The date of birth cannot be a future date.",
+            });
+          } else if (err.errorNum === 20002) {
+            response.status(400).send({
+              message: "Invalid date. The age limit is 100.",
+            });
+          } else if (
+            err.errorNum === 1847 ||
+            err.errorNum === 1861 ||
+            err.errorNum === 1843
+          ) {
+            response.status(400).send({
+              message:
+                "Invalid date format. The expected date format is yyyy-MM-dd.",
+            });
           } else {
             response.status(500).send("Error saving student to DB");
           }
           doRelease(connection);
           return;
+        } else {
+          connection.execute(
+            "SELECT ID FROM STUDENT_2 WHERE EMAIL=:email",
+            [email],
+            function (err, result) {
+              if (err) {
+                console.error(err.message);
+                response.status(500).send("Error updating student to DB");
+                doRelease(connection);
+                return;
+              } else {
+                student.id = result.rows[0][0];
+                response.json(student);
+                response.end();
+                doRelease(connection);
+                return;
+              }
+            }
+          );
         }
-        // response.json(student);
-        response.end();
-        doRelease(connection);
       }
     );
   });
@@ -207,13 +240,19 @@ router.route("/students/:id").put(function (request, response) {
     let id = request.params.id;
 
     connection.execute(
-      "UPDATE STUDENT_2 SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=:dob," +
+      "UPDATE STUDENT_2 SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(:dob,'YYYY-MM-DD')," +
         " EMAIL=:email WHERE ID=:id",
       [body.firstName, body.lastName, body.dob, body.email, id],
       function (err, result) {
         if (err) {
           console.error(err.message);
-          response.status(500).send("Error updating student to DB");
+          if (err.errorNum === 2004) {
+            response.status(409).send({
+              message: "The email you have entered is already in use!",
+            });
+          } else {
+            response.status(500).send("Error updating student to DB");
+          }
           doRelease(connection);
           return;
         }
@@ -238,82 +277,36 @@ router.route("/students/:id").delete(function (request, response) {
     }
 
     let id = request.params.id;
-    // id === 'deleteAll' ? "!= 1" : "= :id"
-    connection.execute(
+    const deleteQuery =
       "DELETE FROM STUDENT_2 WHERE ID " +
-        (id === "deleteAll" ? "!= 1" : "= :id"),
-      [id],
-      function (err, result) {
-        if (err) {
-          console.error(err.message);
-          response.status(500).send("Error deleting student from DB");
-          doRelease(connection);
-          return;
+      (id == "deleteAll" ? "> 2" : `= ${id}`);
+    connection.execute(deleteQuery, {}, function (err, result) {
+      if (result) {
+        if (result.rowsAffected === 0) {
+          response.status(500).send({
+            message:
+              "There is no student to delete. Tech Global and John Doe are permanent.",
+          });
         }
-        response.end();
-        doRelease(connection);
       }
-    );
+      if (err) {
+        if (err.errorNum === 20003) {
+          response.status(403).send({
+            message: `You're not authorized to delete ${
+              id == 1 ? "Tech Global!" : "John Doe!"
+            }`,
+          });
+        } else {
+          response.status(500).send("Error deleting student from DB");
+        }
+        doRelease(connection);
+        return;
+      }
+      response.end();
+      doRelease(connection);
+    });
   });
 });
-
-/**
- * DELETE ALL /
- * Delete all students
- */
-// router.route("/students/deleteAll").delete(function (request, response) {
-//   console.log("DELETE ALL STUDENTS:", request.params);
-//   oracledb.getConnection(connectionProperties, function (err, connection) {
-//     if (err) {
-//       console.error(err.message);
-//       response.status(500).send("Error connecting to DB");
-//       return;
-//     }
-
-//     //   let body = request.body;
-//     //   let id = request.params.id;
-//     connection.execute(
-//       "DELETE FROM STUDENT_2 WHERE ID != :id",
-//       [id],
-//       function (err, result) {
-//         if (err) {
-//           console.error(err.message);
-//           response.status(500).send("Error deleting all students to DB");
-//           doRelease(connection);
-//           return;
-//         }
-//         response.end();
-//         doRelease(connection);
-//       }
-//     );
-//   });
-// });
-
-
-function checkEmailIsValid(student) {
-  const emailPattern = /[\\w.-]{2,}@[\\w.-]{2,}\\.[\\w.-]{2,}/;
-  const email = student.email().trim();
-  if (!email.matches(/[\\w.-]{2,}@[\\w.-]{2,}\\.[\\w.-]{2,}/)) {
-    throw new ResponseStatusException(
-      HttpStatus.BAD_REQUEST,
-      "Invalid email format. The expected format is <2+chars>@<2+chars>.<2+chars> and only digits, letters, and @.-_ characters are allowed."
-    );
-  }
-}
-
-// function checkDobIsValid(student) {
-//   try {
-//     const dob = student.dob;
-//       if (dob === "") throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Field value cannot be empty.");
-//       else if (isDateFuture(dob))
-//           throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid date. The date of birth cannot be a future date.");
-//       else if (isDate100YearsOrPast(dob))
-//           throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid date. The date of birth cannot be older than 100 years.");
-//   } catch (DateTimeParseException e) {
-//       e.printStackTrace();
-//       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid date format. The expected date format is yyyy-MM-dd.");
-//   }
-// }
 
 app.use(express.static("static"));
 app.use("/", router);

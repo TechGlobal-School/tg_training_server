@@ -1,5 +1,4 @@
 import express from "express";
-import bodyParser from "body-parser";
 import oracledb from "oracledb";
 
 oracledb.autoCommit = true;
@@ -22,10 +21,10 @@ function doRelease(connection) {
   });
 }
 
-// configure app to use bodyParser()
+// configure app to use internal bodyParser()
 // this will let us get the data from a POST
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json({ type: "*/*" }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const router = express.Router();
 
@@ -75,7 +74,9 @@ router.route("/students/").get(function (request, response) {
           const dob = element.DOB;
           students.push({
             id: element.ID,
-            dob: `${dob.getFullYear()} - ${dob.getMonth() + 1} - ${dob.getDate()}`,
+            dob: `${dob.getFullYear()} - ${
+              dob.getMonth() + 1
+            } - ${dob.getDate()}`,
             email: element.EMAIL,
             firstName: element.FIRST_NAME,
             lastName: element.LAST_NAME,

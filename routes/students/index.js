@@ -12,12 +12,24 @@ const router = express.Router();
 // return next();
 // };
 
+const formatDate = (rows) => {
+  // use this instead
+};
+
 router.get("/", async (req, res) => {
-  //   const connection = req.connection;
   try {
     const connection = await dbSingleton.createConnection();
     const result = await connection.execute("SELECT * FROM student_2");
-    return res.status(200).send(result?.rows);
+
+    // format date
+    result.rows.forEach((row) => {
+      const date = new Date(row.DOB);
+      const year = date.toLocaleString("default", { year: "numeric" });
+      const month = date.toLocaleString("default", { month: "2-digit" });
+      const day = date.toLocaleString("default", { day: "2-digit" });
+      return (row.DOB = year + "-" + month + "-" + day); // yyyy-mm-dd
+    });
+    return res.status(200).send(result.rows);
   } catch (err) {
     console.error(err.message);
     return res.status(500).send("Error getting data from DB");
@@ -47,6 +59,14 @@ router.get("/:id", async (req, res) => {
       `SELECT * FROM student_2 WHERE ID = :id`,
       [id]
     );
+    // format date
+    result.rows.forEach((row) => {
+      const date = new Date(row.DOB);
+      const year = date.toLocaleString("default", { year: "numeric" });
+      const month = date.toLocaleString("default", { month: "2-digit" });
+      const day = date.toLocaleString("default", { day: "2-digit" });
+      return (row.DOB = year + "-" + month + "-" + day); // yyyy-mm-dd
+    });
     res.status(200).send(result.rows);
   } catch (err) {
     console.error(err.message);
@@ -146,19 +166,19 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const connection = await dbSingleton.createConnection();
-    const { firstName, lastName, dob, email } = req.body;
+    const { FIRST_NAME, LAST_NAME, DOB, EMAIL } = req.body;
     const { id } = req.params;
-
+    console.log("req.body", req.body);
     const result = await connection.execute(
       `UPDATE STUDENT_2 SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(:dob,'YYYY-MM-DD'), EMAIL=:email WHERE ID=:id`,
-      [firstName, lastName, dob, email, id],
+      [FIRST_NAME, LAST_NAME, DOB, EMAIL, id],
       { autoCommit: true } // query has to be committed
     );
 
     if (result) {
       const studentId = await connection.execute(
-        "SELECT ID FROM STUDENT_2 WHERE EMAIL=:email",
-        [email]
+        "SELECT ID FROM STUDENT_2 WHERE EMAIL=:EMAIL",
+        [EMAIL]
       );
       return res.status(200).send(studentId.rows);
     }

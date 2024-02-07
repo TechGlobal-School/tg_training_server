@@ -1,20 +1,12 @@
 import express from "express";
 import dbSingleton from "../../config/db/DbSingleton.js";
-
 const router = express.Router();
 
 // TODO: Custom error messages
 // Get connection before each request?
 // Update frontend upper case values same as in DB. Format DB in FE
-
-// export const dbConnection = async (req, resp, next) => {
-//   req.connection = await dbSingleton.createConnection();
-// return next();
-// };
-
-const formatDate = (rows) => {
-  // use this instead
-};
+// Remove duplicates on format date
+// Validate if date is future or 100 older date?
 
 router.get("/", async (req, res) => {
   try {
@@ -204,15 +196,15 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     const connection = await dbSingleton.createConnection();
-
     const { id } = req.params;
 
-    const deleteQuery =
-      "DELETE FROM STUDENT_2 WHERE ID " +
-      (id == "deleteAll" ? "> 2" : `= ${id}`);
-    const result = await connection.execute(deleteQuery, [], {
-      autoCommit: true,
-    });
+    const result = await connection.execute(
+      `DELETE FROM STUDENT_2 WHERE ID=:id`,
+      [id],
+      {
+        autoCommit: true,
+      }
+    );
 
     if (result && result?.rowsAffected === 0) {
       res.status(500).send({
@@ -220,7 +212,6 @@ router.delete("/:id", async (req, res) => {
           "There is no student to delete. Tech Global and John Doe are permanent.",
       });
     }
-
     res.status(200).send(result.rows);
   } catch (err) {
     if (err.errorNum === 20003) {
@@ -232,6 +223,34 @@ router.delete("/:id", async (req, res) => {
     } else {
       res.status(500).send("Error deleting student from DB");
     }
+  }
+});
+
+/**
+ * DELETE /all/delete
+ * Delete all students
+ */
+router.delete("/all/delete", async (req, res) => {
+  try {
+    const connection = await dbSingleton.createConnection();
+    const result = await connection.execute(
+      `DELETE from STUDENT_2 where ID > 2`,
+      [],
+      {
+        autoCommit: true,
+      }
+    );
+    if (result && result?.rowsAffected === 0) {
+      res.status(500).send({
+        message:
+          "There is no student to delete. Tech Global and John Doe are permanent.",
+      });
+    }
+
+    res.status(200).send(result.rows);
+  } catch (err) {
+    console.log("err", err);
+    res.status(500).send("Error deleting student from DB");
   }
 });
 

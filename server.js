@@ -1,8 +1,9 @@
 import express from "express";
 import "dotenv/config";
 import studentsRouter from "./routes/students/index.js";
+import instructorsRouter from "./routes/instructors/index.js";
 
-// App init
+// App
 const app = express();
 
 // Middlewares
@@ -21,9 +22,15 @@ app.use(function (request, response, next) {
   response.setHeader("Access-Control-Allow-Credentials", true);
   next();
 });
-app.use(express.static("public"));
-app.use("/students", studentsRouter);
 
+// Serve static files
+app.use(express.static("public"));
+
+// Routes
+app.use("/students", studentsRouter);
+app.use("/instructors", instructorsRouter);
+
+// Listen
 const PORT = process.env.PORT || 8089;
 app.listen(PORT, () => `Server listening on port ${PORT}`);
 

@@ -93,21 +93,20 @@ router.post("/", async (req, res) => {
     const student = req.body;
 
     // Change this to same as in DB in front end
-    const { firstName, lastName, email, dob } = student;
+    const { FIRST_NAME, LAST_NAME, EMAIL, DOB } = student;
 
     // TODO: Double check this. Do we need this?
     const result = await connection.execute(
       `INSERT INTO STUDENT_2 (ID, DOB, EMAIL, FIRST_NAME, LAST_NAME) VALUES(STUDENT_2_SEQ.NEXTVAL, TO_DATE(:dob,'YYYY-MM-DD'),:email,:firstName,:lastName)`,
-      [dob, email, firstName, lastName],
+      [DOB, EMAIL, FIRST_NAME, LAST_NAME],
       {
         autoCommit: true, // query has to be committed
       }
     );
-    console.log("result", result);
     if (result) {
       const studentId = await connection.execute(
         "SELECT ID FROM STUDENT_2 WHERE EMAIL=:email",
-        [email]
+        [EMAIL]
       );
       return res.status(200).send(studentId.rows);
     }

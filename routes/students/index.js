@@ -11,7 +11,7 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const connection = await dbSingleton.createConnection();
-    const result = await connection.execute("SELECT * FROM student_2");
+    const result = await connection.execute("SELECT * FROM STUDENT");
 
     // format date
     result.rows.forEach((row) => {
@@ -48,7 +48,7 @@ router.get("/:id", async (req, res) => {
     let { id } = req.params;
 
     const result = await connection.execute(
-      `SELECT * FROM student_2 WHERE ID = :id`,
+      `SELECT * FROM STUDENT WHERE ID = :id`,
       [id]
     );
     // format date
@@ -89,7 +89,7 @@ router.post("/", async (req, res) => {
 
     // TODO: Double check this. Do we need this?
     const result = await connection.execute(
-      `INSERT INTO STUDENT_2 (ID, DOB, EMAIL, FIRST_NAME, LAST_NAME) VALUES(STUDENT_2_SEQ.NEXTVAL, TO_DATE(:dob,'YYYY-MM-DD'),:email,:firstName,:lastName)`,
+      `INSERT INTO STUDENT (ID, DOB, EMAIL, FIRST_NAME, LAST_NAME) VALUES(STUDENT_SEQ.NEXTVAL, TO_DATE(:dob,'YYYY-MM-DD'),:email,:firstName,:lastName)`,
       [DOB, EMAIL, FIRST_NAME, LAST_NAME],
       {
         autoCommit: true, // query has to be committed
@@ -97,7 +97,7 @@ router.post("/", async (req, res) => {
     );
     if (result) {
       const studentId = await connection.execute(
-        "SELECT ID FROM STUDENT_2 WHERE EMAIL=:email",
+        "SELECT ID FROM STUDENT WHERE EMAIL=:email",
         [EMAIL]
       );
       return res.status(200).send(studentId.rows);
@@ -161,14 +161,14 @@ router.put("/:id", async (req, res) => {
     const { id } = req.params;
     console.log("req.body", req.body);
     const result = await connection.execute(
-      `UPDATE STUDENT_2 SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(:dob,'YYYY-MM-DD'), EMAIL=:email WHERE ID=:id`,
+      `UPDATE STUDENT SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(:dob,'YYYY-MM-DD'), EMAIL=:email WHERE ID=:id`,
       [FIRST_NAME, LAST_NAME, DOB, EMAIL, id],
       { autoCommit: true } // query has to be committed
     );
 
     if (result) {
       const studentId = await connection.execute(
-        "SELECT ID FROM STUDENT_2 WHERE EMAIL=:EMAIL",
+        "SELECT ID FROM STUDENT WHERE EMAIL=:EMAIL",
         [EMAIL]
       );
       return res.status(200).send(studentId.rows);
@@ -199,7 +199,7 @@ router.delete("/:id", async (req, res) => {
     const { id } = req.params;
 
     const result = await connection.execute(
-      `DELETE FROM STUDENT_2 WHERE ID=:id`,
+      `DELETE FROM STUDENT WHERE ID=:id`,
       [id],
       {
         autoCommit: true,
@@ -234,7 +234,7 @@ router.delete("/all/delete", async (req, res) => {
   try {
     const connection = await dbSingleton.createConnection();
     const result = await connection.execute(
-      `DELETE from STUDENT_2 where ID > 2`,
+      `DELETE from STUDENT where ID > 2`,
       [],
       {
         autoCommit: true,

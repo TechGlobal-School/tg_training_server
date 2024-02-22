@@ -2,11 +2,9 @@ import express from "express";
 import dbSingleton from "../../config/db/DbSingleton.js";
 const router = express.Router();
 
-// TODO: Custom error messages
-// Get connection before each request?
-// Update frontend upper case values same as in DB. Format DB in FE
-// Remove duplicates on format date
-// Validate if date is future or 100 older date?
+// TODO:
+// Look out for error edge cases
+// Deleted NO_UPDATE Trigger by mistake, bring it back
 
 router.get("/", async (req, res) => {
   let connection;
@@ -97,10 +95,8 @@ router.post("/", async (req, res) => {
     connection = await dbSingleton.createConnection();
     const student = req.body;
 
-    // Change this to same as in DB in front end
     const { FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID } = student;
 
-    // TODO: Double check this. Do we need this?
     const result = await connection.execute(
       `INSERT INTO STUDENT (ID, DOB, EMAIL, FIRST_NAME, LAST_NAME, INSTRUCTOR_ID) VALUES(STUDENT_SEQ.NEXTVAL, TO_DATE(:dob,'YYYY-MM-DD'),:email,:firstName,:lastName, :instructorId)`,
       [DOB, EMAIL, FIRST_NAME, LAST_NAME, INSTRUCTOR_ID],
@@ -108,15 +104,11 @@ router.post("/", async (req, res) => {
         autoCommit: true, // query has to be committed
       }
     );
-    if (result) {
-      const student = await connection.execute(
-        "SELECT * FROM STUDENT WHERE EMAIL=:email",
-        [EMAIL]
-      );
-      return res.status(200).send(student.rows[0]);
-    }
+    if (!result) throw new Error("Error saving student to DB");
+
+    return res.status(200).send(FIRST_NAME);
   } catch (err) {
-    console.error(err.message);
+    console.error("Error", err.message);
 
     if (err.errorNum === 1) {
       res.status(409).send({
@@ -149,7 +141,7 @@ router.post("/", async (req, res) => {
         message: "Invalid date format. The expected date format is yyyy-MM-dd.",
       });
     } else {
-      res.status(500).send("Error saving student to DB");
+      res.status(500).send({ message: "Error saving student to DB" });
     }
   } finally {
     if (connection) {
@@ -174,39 +166,27 @@ router.put("/:id", async (req, res) => {
     const { FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID } = req.body;
     const { id: ID } = req.params;
 
-    console.log("req.body", req.body, ID);
     const result = await connection.execute(
-      `UPDATE STUDENT 
+      `UPDATE STUDENT
       SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(:dob,'YYYY-MM-DD'), EMAIL=:email, INSTRUCTOR_ID=:instructorId 
       WHERE ID=:id`,
       [FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID, ID],
-      { autoCommit: true } // query has to be committed
+      { autoCommit: true } // commit
     );
+    if (!result) throw new Error("Error updating student to DB.");
 
-    if (result) {
-      const student = await connection.execute(
-        `SELECT STUDENT.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME
-	    FROM STUDENT
-	    JOIN INSTRUCTORS
-	    ON STUDENT.INSTRUCTOR_ID =:INSTRUCTOR_ID
-      WHERE EMAIL=:EMAIL
-      `,
-        [INSTRUCTOR_ID, EMAIL]
-      );
-      console.log("student", student.rows[0]);
-      return res.status(200).send(student.rows[0]);
-    }
-
-    res.status(200).json(result.rows);
+    return res.status(200).send(FIRST_NAME);
   } catch (err) {
-    console.error(err.message);
+    console.error("Error", err.message);
 
     if (err.errorNum === 2004) {
       res.status(409).send({
         message: "The email you have entered is already in use!",
       });
     } else {
-      res.status(500).send("Error updating student to DB");
+      res.status(500).send({
+        message: "Error updating student to DB.",
+      });
     }
   } finally {
     if (connection) {
@@ -230,12 +210,11 @@ router.delete("/:id", async (req, res) => {
     connection = await dbSingleton.createConnection();
     const { id } = req.params;
 
+    console.log("id", id);
     const result = await connection.execute(
       `DELETE FROM STUDENT WHERE ID=:id`,
       [id],
-      {
-        autoCommit: true,
-      }
+      { autoCommit: true }
     );
 
     if (result && result?.rowsAffected === 0) {
@@ -244,8 +223,9 @@ router.delete("/:id", async (req, res) => {
           "There is no student to delete. Tech Global and John Doe are permanent.",
       });
     }
-    // TODO:Send proper message
-    res.status(200).send(result);
+    res
+      .status(200)
+      .send({ message: `Successfully deleted user with Id: ${id}` });
   } catch (err) {
     if (err.errorNum === 20003) {
       res.status(403).send({
@@ -290,7 +270,7 @@ router.delete("/all/delete", async (req, res) => {
       });
     }
 
-    res.status(200).send(result.rows);
+    res.status(200).send({ message: "Successfully deleted all users!" });
   } catch (err) {
     console.log("err", err);
     res.status(500).send("Error deleting student from DB");

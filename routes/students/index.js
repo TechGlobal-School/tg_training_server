@@ -9,9 +9,15 @@ const router = express.Router();
 // Validate if date is future or 100 older date?
 
 router.get("/", async (req, res) => {
+  let connection;
   try {
-    const connection = await dbSingleton.createConnection();
-    const result = await connection.execute("SELECT * FROM STUDENT");
+    connection = await dbSingleton.createConnection();
+    const result = await connection.execute(`
+    	SELECT STUDENT.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME
+	    FROM STUDENT
+	    JOIN INSTRUCTORS
+	    ON STUDENT.INSTRUCTOR_ID = INSTRUCTORS.ID
+    `);
 
     // format date
     result.rows.forEach((row) => {
@@ -25,16 +31,16 @@ router.get("/", async (req, res) => {
   } catch (err) {
     console.error(err.message);
     return res.status(500).send("Error getting data from DB");
+  } finally {
+    if (connection) {
+      // the connection assignment worked, must release
+      try {
+        await connection.release();
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }
-  //   finally {
-  //  if (connection) {   // the connection assignment worked, must release
-  //             try {
-  //                 await connection.release();
-  //             } catch (e) {
-  //                 console.error(e);
-  //             }
-  //         }
-  //   }
 });
 
 /**
@@ -43,12 +49,18 @@ router.get("/", async (req, res) => {
  */
 
 router.get("/:id", async (req, res) => {
+  let connection;
   try {
-    const connection = await dbSingleton.createConnection();
+    connection = await dbSingleton.createConnection();
     let { id } = req.params;
 
     const result = await connection.execute(
-      `SELECT * FROM STUDENT WHERE ID = :id`,
+      `
+      SELECT STUDENT.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME
+	    FROM STUDENT
+	    JOIN INSTRUCTORS
+	    ON STUDENT.INSTRUCTOR_ID = INSTRUCTORS.ID
+      WHERE STUDENT.ID = :id`,
       [id]
     );
     // format date
@@ -63,16 +75,16 @@ router.get("/:id", async (req, res) => {
   } catch (err) {
     console.error(err.message);
     return res.status(500).send("Error connecting to DB");
+  } finally {
+    if (connection) {
+      // the connection assignment worked, must release
+      try {
+        await connection.release();
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }
-  //   finally {
-  //  if (connection) {   // the connection assignment worked, must release
-  //             try {
-  //                 await connection.release();
-  //             } catch (e) {
-  //                 console.error(e);
-  //             }
-  //         }
-  //   }
 });
 
 /**
@@ -80,27 +92,28 @@ router.get("/:id", async (req, res) => {
  * Saves a new student
  */
 router.post("/", async (req, res) => {
+  let connection;
   try {
-    const connection = await dbSingleton.createConnection();
+    connection = await dbSingleton.createConnection();
     const student = req.body;
 
     // Change this to same as in DB in front end
-    const { FIRST_NAME, LAST_NAME, EMAIL, DOB } = student;
+    const { FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID } = student;
 
     // TODO: Double check this. Do we need this?
     const result = await connection.execute(
-      `INSERT INTO STUDENT (ID, DOB, EMAIL, FIRST_NAME, LAST_NAME) VALUES(STUDENT_SEQ.NEXTVAL, TO_DATE(:dob,'YYYY-MM-DD'),:email,:firstName,:lastName)`,
-      [DOB, EMAIL, FIRST_NAME, LAST_NAME],
+      `INSERT INTO STUDENT (ID, DOB, EMAIL, FIRST_NAME, LAST_NAME, INSTRUCTOR_ID) VALUES(STUDENT_SEQ.NEXTVAL, TO_DATE(:dob,'YYYY-MM-DD'),:email,:firstName,:lastName, :instructorId)`,
+      [DOB, EMAIL, FIRST_NAME, LAST_NAME, INSTRUCTOR_ID],
       {
         autoCommit: true, // query has to be committed
       }
     );
     if (result) {
-      const studentId = await connection.execute(
-        "SELECT ID FROM STUDENT WHERE EMAIL=:email",
+      const student = await connection.execute(
+        "SELECT * FROM STUDENT WHERE EMAIL=:email",
         [EMAIL]
       );
-      return res.status(200).send(studentId.rows);
+      return res.status(200).send(student.rows[0]);
     }
   } catch (err) {
     console.error(err.message);
@@ -138,16 +151,16 @@ router.post("/", async (req, res) => {
     } else {
       res.status(500).send("Error saving student to DB");
     }
+  } finally {
+    if (connection) {
+      // the connection assignment worked, must release
+      try {
+        await connection.release();
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }
-  //  finally {
-  // if (connection) {   // the connection assignment worked, must release
-  //         try {
-  //             await connection.release();
-  //         } catch (e) {
-  //             console.error(e);
-  //         }
-  //     }
-  // }
 });
 
 /**
@@ -155,36 +168,54 @@ router.post("/", async (req, res) => {
  * Update a student
  */
 router.put("/:id", async (req, res) => {
+  let connection;
   try {
-    const connection = await dbSingleton.createConnection();
-    const { FIRST_NAME, LAST_NAME, DOB, EMAIL } = req.body;
-    const { id } = req.params;
-    console.log("req.body", req.body);
+    connection = await dbSingleton.createConnection();
+    const { FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID } = req.body;
+    const { id: ID } = req.params;
+
+    console.log("req.body", req.body, ID);
     const result = await connection.execute(
-      `UPDATE STUDENT SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(:dob,'YYYY-MM-DD'), EMAIL=:email WHERE ID=:id`,
-      [FIRST_NAME, LAST_NAME, DOB, EMAIL, id],
+      `UPDATE STUDENT 
+      SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(:dob,'YYYY-MM-DD'), EMAIL=:email, INSTRUCTOR_ID=:instructorId 
+      WHERE ID=:id`,
+      [FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID, ID],
       { autoCommit: true } // query has to be committed
     );
 
     if (result) {
-      const studentId = await connection.execute(
-        "SELECT ID FROM STUDENT WHERE EMAIL=:EMAIL",
-        [EMAIL]
+      const student = await connection.execute(
+        `SELECT STUDENT.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME
+	    FROM STUDENT
+	    JOIN INSTRUCTORS
+	    ON STUDENT.INSTRUCTOR_ID =:INSTRUCTOR_ID
+      WHERE EMAIL=:EMAIL
+      `,
+        [INSTRUCTOR_ID, EMAIL]
       );
-      return res.status(200).send(studentId.rows);
+      console.log("student", student.rows[0]);
+      return res.status(200).send(student.rows[0]);
     }
 
     res.status(200).json(result.rows);
   } catch (err) {
     console.error(err.message);
 
-    // TODO: Is it working?
     if (err.errorNum === 2004) {
       res.status(409).send({
         message: "The email you have entered is already in use!",
       });
     } else {
       res.status(500).send("Error updating student to DB");
+    }
+  } finally {
+    if (connection) {
+      // the connection assignment worked, must release
+      try {
+        await connection.release();
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 });
@@ -194,8 +225,9 @@ router.put("/:id", async (req, res) => {
  * Delete a student
  */
 router.delete("/:id", async (req, res) => {
+  let connection;
   try {
-    const connection = await dbSingleton.createConnection();
+    connection = await dbSingleton.createConnection();
     const { id } = req.params;
 
     const result = await connection.execute(
@@ -212,7 +244,8 @@ router.delete("/:id", async (req, res) => {
           "There is no student to delete. Tech Global and John Doe are permanent.",
       });
     }
-    res.status(200).send(result.rows);
+    // TODO:Send proper message
+    res.status(200).send(result);
   } catch (err) {
     if (err.errorNum === 20003) {
       res.status(403).send({
@@ -223,6 +256,15 @@ router.delete("/:id", async (req, res) => {
     } else {
       res.status(500).send("Error deleting student from DB");
     }
+  } finally {
+    if (connection) {
+      // the connection assignment worked, must release
+      try {
+        await connection.release();
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }
 });
 
@@ -231,8 +273,9 @@ router.delete("/:id", async (req, res) => {
  * Delete all students
  */
 router.delete("/all/delete", async (req, res) => {
+  let connection;
   try {
-    const connection = await dbSingleton.createConnection();
+    connection = await dbSingleton.createConnection();
     const result = await connection.execute(
       `DELETE from STUDENT where ID > 2`,
       [],
@@ -251,6 +294,15 @@ router.delete("/all/delete", async (req, res) => {
   } catch (err) {
     console.log("err", err);
     res.status(500).send("Error deleting student from DB");
+  } finally {
+    if (connection) {
+      // the connection assignment worked, must release
+      try {
+        await connection.release();
+      } catch (e) {
+        console.error(e);
+      }
+    }
   }
 });
 

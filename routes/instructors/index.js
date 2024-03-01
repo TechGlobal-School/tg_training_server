@@ -2,9 +2,7 @@ import express from "express";
 import dbSingleton from "../../config/db/DbSingleton.js";
 const router = express.Router();
 
-// TODO:
-// Loop is bad idea
-// Make sure not to save if instructor_id is null or empty from frontend
+// TODO: Loop is bad idea. Make sure not to save if instructor_id is null or empty from frontend
 
 router.get("/", async (req, res) => {
   let connection;

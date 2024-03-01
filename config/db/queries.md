@@ -1,3 +1,5 @@
+# Not finished. Just the documentation
+
 # Queries
 
 ## Students

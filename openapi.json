@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "TechGlobal Backend Testing API Documentation",
-    "description": "This is a sample Backend Testing api based on OpenAPI 3.0 specification. Check out below routes for students and instructors",
+    "title": "TechGlobal Backend API Documentation",
+    "description": "API based on OpenAPI 3.0 specification. Check out below examples.",
     "version": "1.0.11"
   },
   "tags": [
@@ -43,7 +43,7 @@
       "post": {
         "tags": ["students"],
         "summary": "Add a new student",
-        "description": "Post a new student",
+        "description": "Post a new student. DOB format: 2024-02-28",
         "requestBody": {
           "$ref": "#/components/requestBodies/PostStudent"
         },
@@ -319,9 +319,6 @@
           },
           "INSTRUCTOR_ID": {
             "type": "number"
-          },
-          "INSTRUCTOR_NAME": {
-            "type": "string"
           }
         }
       },

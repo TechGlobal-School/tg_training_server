@@ -1,11 +1,9 @@
 import express from "express";
 import dbSingleton from "../../config/db/DbSingleton.js";
-import { logger } from "../../server.js";
+import { logger } from "../../config/logger/logger.js";
 const router = express.Router();
 
-// TODO:
-// Look out for error edge cases
-// Deleted NO_UPDATE Trigger by mistake, bring it back
+// TODO: Look out for error edge cases. Deleted NO_UPDATE Trigger by mistake, bring it back
 
 router.get("/", async (req, res) => {
   let connection;

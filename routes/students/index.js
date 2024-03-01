@@ -1,5 +1,6 @@
 import express from "express";
 import dbSingleton from "../../config/db/DbSingleton.js";
+import { logger } from "../../server.js";
 const router = express.Router();
 
 // TODO:
@@ -9,6 +10,12 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   let connection;
   try {
+    // Testing logger - check on AWS
+    logger.log({
+      level: "info",
+      message: "/students GET hit",
+    });
+
     connection = await dbSingleton.createConnection();
     const result = await connection.execute(`
     	SELECT STUDENT.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME
@@ -18,13 +25,13 @@ router.get("/", async (req, res) => {
     `);
 
     // format date
-    result.rows.forEach((row) => {
-      const date = new Date(row.DOB);
-      const year = date.toLocaleString("default", { year: "numeric" });
-      const month = date.toLocaleString("default", { month: "2-digit" });
-      const day = date.toLocaleString("default", { day: "2-digit" });
-      return (row.DOB = year + "-" + month + "-" + day); // yyyy-mm-dd
-    });
+    // result.rows.forEach((row) => {
+    //   const date = new Date(row.DOB);
+    //   const year = date.toLocaleString("default", { year: "numeric" });
+    //   const month = date.toLocaleString("default", { month: "2-digit" });
+    //   const day = date.toLocaleString("default", { day: "2-digit" });
+    //   return (row.DOB = year + "-" + month + "-" + day); // yyyy-mm-dd
+    // });
     return res.status(200).send(result.rows);
   } catch (err) {
     console.error(err.message);
@@ -61,15 +68,8 @@ router.get("/:id", async (req, res) => {
       WHERE STUDENT.ID = :id`,
       [id]
     );
-    // format date
-    result.rows.forEach((row) => {
-      const date = new Date(row.DOB);
-      const year = date.toLocaleString("default", { year: "numeric" });
-      const month = date.toLocaleString("default", { month: "2-digit" });
-      const day = date.toLocaleString("default", { day: "2-digit" });
-      return (row.DOB = year + "-" + month + "-" + day); // yyyy-mm-dd
-    });
-    res.status(200).send(result.rows);
+    const studentObj = result.rows[0];
+    res.status(200).send(studentObj);
   } catch (err) {
     console.error(err.message);
     return res.status(500).send("Error connecting to DB");
@@ -94,7 +94,6 @@ router.post("/", async (req, res) => {
   try {
     connection = await dbSingleton.createConnection();
     const student = req.body;
-
     const { FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID } = student;
 
     const result = await connection.execute(
@@ -106,7 +105,8 @@ router.post("/", async (req, res) => {
     );
     if (!result) throw new Error("Error saving student to DB");
 
-    return res.status(200).send(FIRST_NAME);
+    // No needed to query again for student if we know result successful
+    return res.status(201).send(student);
   } catch (err) {
     console.error("Error", err.message);
 
@@ -166,16 +166,17 @@ router.put("/:id", async (req, res) => {
     const { FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID } = req.body;
     const { id: ID } = req.params;
 
+    // We don't care about timezone hence substr()
     const result = await connection.execute(
       `UPDATE STUDENT
-      SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(:dob,'YYYY-MM-DD'), EMAIL=:email, INSTRUCTOR_ID=:instructorId 
+      SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(substr(:dob, 1, 10),'YYYY-MM-DD'), EMAIL=:email, INSTRUCTOR_ID=:instructorId 
       WHERE ID=:id`,
       [FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID, ID],
       { autoCommit: true } // commit
     );
     if (!result) throw new Error("Error updating student to DB.");
 
-    return res.status(200).send(FIRST_NAME);
+    return res.status(201).send(`Successfully updated ${FIRST_NAME}`);
   } catch (err) {
     console.error("Error", err.message);
 
@@ -210,7 +211,6 @@ router.delete("/:id", async (req, res) => {
     connection = await dbSingleton.createConnection();
     const { id } = req.params;
 
-    console.log("id", id);
     const result = await connection.execute(
       `DELETE FROM STUDENT WHERE ID=:id`,
       [id],

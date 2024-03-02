@@ -254,6 +254,13 @@
                       },
                       "FULLNAME": {
                         "type": "string"
+                      },
+                      "STUDENTS": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "$ref": "#/components/schemas/Student2"
+                        }
                       }
                     }
                   }
@@ -299,6 +306,29 @@
           },
           "INSTRUCTOR_NAME": {
             "type": "string"
+          }
+        }
+      },
+      "Student2": {
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "number"
+          },
+          "DOB": {
+            "type": "string"
+          },
+          "EMAIL": {
+            "type": "string"
+          },
+          "FIRST_NAME": {
+            "type": "string"
+          },
+          "LAST_NAME": {
+            "type": "string"
+          },
+          "INSTRUCTOR_ID": {
+            "type": "number"
           }
         }
       },

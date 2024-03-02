@@ -60,11 +60,20 @@ router.get("/:id", async (req, res) => {
       `SELECT * FROM instructors WHERE ID=:id`,
       [id]
     );
-    if (!result) {
+
+    const students = await connection.execute(
+      `SELECT * FROM STUDENT WHERE STUDENT.INSTRUCTOR_ID=:id`,
+      [id]
+    );
+
+    const instructor = result.rows[0];
+    instructor.STUDENTS = students.rows;
+
+    if (!instructor) {
       throw new Error("Error while getting instructor from database");
     }
 
-    return res.status(200).send(result.rows);
+    return res.status(200).send(instructor);
   } catch (err) {
     console.error(err.message);
     return res.status(500).send("Error getting instructors data from DB");

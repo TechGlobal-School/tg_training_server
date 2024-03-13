@@ -1,0 +1,422 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "TechGlobal Backend API Documentation",
+    "description": "API based on OpenAPI 3.0 specification. Check out below examples.",
+    "version": "1.0.11"
+  },
+  "tags": [
+    {
+      "name": "students",
+      "description": "Everything about Students Api"
+    },
+    {
+      "name": "instructors",
+      "description": "Everything about Instructors Api"
+    }
+  ],
+  "paths": {
+    "/students": {
+      "get": {
+        "tags": ["students"],
+        "summary": "Get all students",
+        "description": "Get all students",
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Student"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error getting data from DB"
+          }
+        }
+      },
+      "post": {
+        "tags": ["students"],
+        "summary": "Add a new student",
+        "description": "Post a new student. DOB format: 2024-02-28",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/PostStudent"
+        },
+        "responses": {
+          "201": {
+            "description": "John"
+          },
+          "400": {
+            "description": "Missing field! Please fill all parameters and try again!"
+          },
+          "409": {
+            "description": "The email you have entered is already in use!"
+          },
+          "500": {
+            "description": "Error saving student to DB"
+          }
+        }
+      }
+    },
+    "/students/{id}": {
+      "get": {
+        "tags": ["students"],
+        "summary": "Find student by id",
+        "description": "Returns a single student",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id of student to return",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Student"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid id supplied"
+          },
+          "404": {
+            "description": "Student not found"
+          },
+          "500": {
+            "description": "Error connecting to DB"
+          }
+        }
+      },
+      "put": {
+        "tags": ["students"],
+        "summary": "Update a single student",
+        "description": "Update a single student",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "number"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/PutStudent"
+        },
+        "responses": {
+          "201": {
+            "description": "Name of updated student"
+          },
+          "409": {
+            "description": "The email you have entered is already in use!"
+          },
+          "500": {
+            "description": "Error saving student to DB"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["students"],
+        "summary": "Delete a single student",
+        "description": "Delete a single student",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "number"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successfully deleted user with Id id"
+          },
+          "403": {
+            "description": "You're not authorized to delete"
+          },
+          "500": {
+            "description": "Error deleting student from DB"
+          }
+        }
+      }
+    },
+    "/students/all/delete": {
+      "delete": {
+        "tags": ["students"],
+        "summary": "deletes all students",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/instructors": {
+      "get": {
+        "tags": ["instructors"],
+        "summary": "Get all instructors",
+        "description": "Get all instructors",
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Instructor"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error getting data from DB"
+          }
+        }
+      }
+    },
+    "/instructors/{id}": {
+      "get": {
+        "tags": ["instructors"],
+        "summary": "Find instructors by id",
+        "description": "Returns a single instructors",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id of instructors to return",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ID": {
+                        "type": "string"
+                      },
+                      "FULLNAME": {
+                        "type": "string"
+                      },
+                      "STUDENTS": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "$ref": "#/components/schemas/Student2"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid id supplied"
+          },
+          "404": {
+            "description": "Student not found"
+          },
+          "500": {
+            "description": "Error connecting to DB"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Student": {
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "number"
+          },
+          "DOB": {
+            "type": "string"
+          },
+          "EMAIL": {
+            "type": "string"
+          },
+          "FIRST_NAME": {
+            "type": "string"
+          },
+          "LAST_NAME": {
+            "type": "string"
+          },
+          "INSTRUCTOR_ID": {
+            "type": "number"
+          },
+          "INSTRUCTOR_NAME": {
+            "type": "string"
+          }
+        }
+      },
+      "Student2": {
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "number"
+          },
+          "DOB": {
+            "type": "string"
+          },
+          "EMAIL": {
+            "type": "string"
+          },
+          "FIRST_NAME": {
+            "type": "string"
+          },
+          "LAST_NAME": {
+            "type": "string"
+          },
+          "INSTRUCTOR_ID": {
+            "type": "number"
+          }
+        }
+      },
+      "PostStudent": {
+        "type": "object",
+        "properties": {
+          "DOB": {
+            "type": "string"
+          },
+          "EMAIL": {
+            "type": "string"
+          },
+          "FIRST_NAME": {
+            "type": "string"
+          },
+          "LAST_NAME": {
+            "type": "string"
+          },
+          "INSTRUCTOR_ID": {
+            "type": "number"
+          }
+        }
+      },
+      "PutStudent": {
+        "type": "object",
+        "properties": {
+          "DOB": {
+            "type": "string"
+          },
+          "EMAIL": {
+            "type": "string"
+          },
+          "FIRST_NAME": {
+            "type": "string"
+          },
+          "LAST_NAME": {
+            "type": "string"
+          },
+          "INSTRUCTOR_ID": {
+            "type": "number"
+          }
+        }
+      },
+      "Instructor": {
+        "type": "object",
+        "properties": {
+          "ID": {
+            "type": "number"
+          },
+          "FULLNAME": {
+            "type": "string"
+          },
+          "STUDENTS": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/PutStudent"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "requestBodies": {
+      "PostStudent": {
+        "description": "A JSON object containing student information",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/PostStudent"
+            }
+          }
+        }
+      },
+      "PutStudent": {
+        "description": "A JSON object containing student information",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/PutStudent"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -6,7 +6,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./openapi.json" assert { type: "json" };
 import cors from "cors";
 import { swaggerOptions } from "./lib/swagger/index.js";
-import serverless from "serverless-http";
+
 // App
 const app = express();
 
@@ -28,5 +28,6 @@ app.use("/instructors", instructorsRouter);
 // Serve static files
 app.use(express.static("public"));
 
-// Serve serverless
-export let handler = serverless(app);
+// Listen
+const PORT = process.env.PORT || 8089;
+app.listen(PORT, () => `Server listening on port ${PORT}`);

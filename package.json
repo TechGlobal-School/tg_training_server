@@ -4,10 +4,10 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server",
-    "dev": "nodemon server",
-    "build": "node build"
+    "dev": "nodemon app.local.js",
+    "build": "node build",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"
@@ -21,6 +21,8 @@
     "dotenv": "^16.4.1",
     "express": "^4.18.2",
     "oracledb": "^6.2.0",
+    "serverless-http": "^3.2.0",
+    "serverless-offline": "^13.3.3",
     "swagger-ui-express": "^5.0.0",
     "winston": "^3.11.0"
   },

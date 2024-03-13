@@ -13,6 +13,10 @@ Techglobal School Training - Server is a RESTful API Application built with Node
 
 - Code -> Github Actions -> AWS -> Functions -> URL
 
+### TODO
+
+- Add zipping snippet and add it to pipeline
+
 ### Contributors
 
 [Altay Ozyavas](https://github.com/altayozyavas) |

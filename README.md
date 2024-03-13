@@ -13,6 +13,10 @@ Techglobal School Training - Server is a RESTful API Application built with Node
 
 - Code -> Github Actions -> AWS -> Functions -> URL
 
+## TODO
+
+- Write zip snippet
+
 ### Contributors
 
 [Altay Ozyavas](https://github.com/altayozyavas) |

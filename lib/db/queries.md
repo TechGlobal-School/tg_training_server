@@ -1,4 +1,6 @@
-# Not finished. Just the documentation
+# Documentation
+
+> Not finished
 
 # Queries
 

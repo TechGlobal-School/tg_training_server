@@ -5,38 +5,20 @@ import instructorsRouter from "./routes/instructors/index.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./openapi.json" assert { type: "json" };
 import cors from "cors";
+import { swaggerOptions } from "./lib/swagger/index.js";
 
-// Init
+// App
 const app = express();
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(function (request, response, next) {
-  response.setHeader("Access-Control-Allow-Origin", "*");
-  response.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, OPTIONS, PUT, PATCH, DELETE"
-  );
-  response.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-Requested-With,content-type"
-  );
-  response.setHeader("Access-Control-Allow-Credentials", true);
-  next();
-});
 // Swagger
-const options = {
-  swaggerOptions: {
-    validatorUrl: null,
-  },
-  customCss: ".swagger-ui .topbar {  display: none }", // remove navbar
-};
 app.use(
   "/api-docs",
   swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument, options)
+  swaggerUi.setup(swaggerDocument, swaggerOptions)
 );
 
 // Routes

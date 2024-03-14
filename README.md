@@ -7,15 +7,13 @@ Techglobal School Training - Server is a RESTful API Application built with Node
 - Locally run `npm run dev`
 - On AWS Serverless it will run `npm start`
 
-- We could also use serverless-offline to run locally
+- serverless-offline can be used as well to run locally
 
 ### Deployment
 
-- Code -> Github Actions -> AWS -> Functions -> URL
+Code -> Github Actions -> AWS -> Functions -> URL
 
-### TODO
-
-- Add zipping snippet and add it to pipeline
+![CICD](server_cicd.png)
 
 ### Contributors
 

@@ -4,11 +4,11 @@ import express from "express";
 const router = express.Router();
 import axios from "axios";
 
+// Ulan secrets - move to .env
 const BASE_API = "https://api.jdoodle.com/v1";
 const JDOODLE_CLIENT_ID = "6cf1cc311c4a4296817ed28fc580bd";
 const JDOODLE_CLIENT_SECRET =
   "d31f6e797483d0ef758436f94e06d2c81bffde29aeff90edeb34bc78b694894d";
-const LANGUAGES = ["nodejs", "python3"];
 
 // Token not used yet, directly submitting code
 const getToken = async () => {
@@ -29,11 +29,11 @@ const getToken = async () => {
   return response.data;
 };
 
-const submitCode = async (userCode) => {
+const submitCode = async (userCode, lanugage) => {
   try {
     const execution_data = {
       script: userCode,
-      language: LANGUAGES[0],
+      language: lanugage,
       versionIndex: "0",
       // token: token,
       clientId: JDOODLE_CLIENT_ID,
@@ -52,6 +52,7 @@ const submitCode = async (userCode) => {
     };
 
     const response = await axios.request(options);
+    // console.log("response", response);
     return response.data;
   } catch (error) {
     console.error("error", error);
@@ -59,22 +60,24 @@ const submitCode = async (userCode) => {
   }
 };
 
+router.get("/", (req, res) => {
+  res.send("<h1>Editor API</h1>");
+});
 router.post("/", async (req, res) => {
   try {
-    const { codeToSubmit } = req.body;
-
-    const submissionResult = await submitCode(codeToSubmit);
-    console.log("submissionResult", submissionResult);
-
+    const { script, language } = req.body;
+    const submissionResult = await submitCode(script, language);
     if (!submissionResult) throw new Error("Error submitting code");
 
     // SUCCESS
     return res.status(200).json({
       status: "SUCCESS",
-      result: submissionResult,
+      data: submissionResult,
     });
   } catch (err) {
     console.error(err.message);
     return res.status(500).send(err.message);
   }
 });
+
+export default router;

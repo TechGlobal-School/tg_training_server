@@ -24,6 +24,7 @@ app.use(
 // Routes
 app.use("/students", studentsRouter);
 app.use("/instructors", instructorsRouter);
+app.use("/editor", editorRouter);
 
 // Serve static files
 app.use(express.static("public"));

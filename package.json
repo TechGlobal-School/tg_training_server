@@ -4,8 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server NODE_ENV=production",
-    "dev": "nodemon server",
+    "start": "node server",
+    "dev": "nodemon app.local.js NODE_ENV=local",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

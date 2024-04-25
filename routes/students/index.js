@@ -103,7 +103,7 @@ router.post("/", async (req, res) => {
     if (!result || !student) throw new Error("Error saving student to DB");
 
     // No needed to query again for student if we know result successful
-    return res.status(201).send(student.rows);
+    return res.status(201).send(student.rows?.[0]);
   } catch (err) {
     console.error("Error", err.message);
 

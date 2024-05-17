@@ -63,6 +63,7 @@ const submitCode = async (userCode, lanugage) => {
 router.get("/", (req, res) => {
   res.send("<h1>Editor API</h1>");
 });
+
 router.post("/", async (req, res) => {
   try {
     const { script, language } = req.body;

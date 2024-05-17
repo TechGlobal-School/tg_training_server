@@ -4,6 +4,8 @@ import express from "express";
 const router = express.Router();
 import axios from "axios";
 
+const proxy = "https://cors-anywhere.herokuapp.com/";
+
 // Ulan secrets - move to .env
 const BASE_API = "https://api.jdoodle.com/v1";
 const JDOODLE_CLIENT_ID = "6cf1cc311c4a4296817ed28fc580bd";
@@ -42,7 +44,7 @@ const submitCode = async (userCode, lanugage) => {
 
     const options = {
       method: "POST",
-      url: `${BASE_API}/execute`,
+      url: `${proxy + BASE_API}/execute`,
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",

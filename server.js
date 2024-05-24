@@ -2,7 +2,7 @@ import express from "express";
 import "dotenv/config";
 import studentsRouter from "./routes/students/index.js";
 import instructorsRouter from "./routes/instructors/index.js";
-import editorRouter from "./routes/editor/index.js";
+// import editorRouter from "./routes/editor/index.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./openapi.json" assert { type: "json" };
 import { swaggerOptions } from "./lib/swagger/index.js";
@@ -26,7 +26,7 @@ app.use(
 // Routes
 app.use("/students", studentsRouter);
 app.use("/instructors", instructorsRouter);
-app.use("/editor", editorRouter);
+// app.use("/editor", editorRouter);
 
 // Serve static files
 app.use(express.static("public"));

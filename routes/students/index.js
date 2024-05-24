@@ -102,8 +102,11 @@ router.post("/", async (req, res) => {
 
     if (!result || !student) throw new Error("Error saving student to DB");
 
-    // No needed to query again for student if we know result successful
-    return res.status(201).send(student.rows?.[0]);
+    // Note: Burak wants format of response DOB same as one posted for testing purposes
+    const studentObj = student.rows?.[0];
+    studentObj.DOB = DOB;
+
+    return res.status(201).send(studentObj);
   } catch (err) {
     console.error("Error", err.message);
 

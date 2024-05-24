@@ -44,7 +44,7 @@ const submitCode = async (userCode, lanugage) => {
 
     const options = {
       method: "POST",
-      url: `${proxy + BASE_API}/execute`,
+      url: `${BASE_API}/execute`,
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",

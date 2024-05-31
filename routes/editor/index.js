@@ -4,8 +4,6 @@ import express from "express";
 const router = express.Router();
 import axios from "axios";
 
-// TODO: We moved this to front end until we figure out CORS issue
-
 // const proxy = "https://cors-anywhere.herokuapp.com/";
 
 // Token not used yet, directly submitting code
@@ -34,13 +32,16 @@ const submitCode = async (userCode, lanugage) => {
       language: lanugage,
       versionIndex: "0",
       // token: token,
-      clientId: process.env.JDOODLE_CLIENT_ID,
-      clientSecret: process.env.JDOODLE_CLIENT_SECRET,
+      clientId:
+        process.env.JDOODLE_CLIENT_ID || "6cf1cc311c4a4296817ed28fc580bd",
+      clientSecret:
+        process.env.JDOODLE_CLIENT_SECRET ||
+        "d31f6e797483d0ef758436f94e06d2c81bffde29aeff90edeb34bc78b694894d",
     };
 
     const options = {
       method: "POST",
-      url: `${process.env.BASE_API}/execute`,
+      url: "https://api.jdoodle.com/v1/execute",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -50,6 +51,7 @@ const submitCode = async (userCode, lanugage) => {
     };
 
     const response = await axios.request(options);
+    console.log("response", response);
     return response.data;
   } catch (error) {
     console.error("error", error);
@@ -58,7 +60,7 @@ const submitCode = async (userCode, lanugage) => {
 };
 
 router.get("/", (req, res) => {
-  res.send("<h1>Editor API</h1>");
+  res.send("<h1>Editor API => Check /editor</h1>");
 });
 
 router.post("/", async (req, res) => {
@@ -67,6 +69,7 @@ router.post("/", async (req, res) => {
     const submissionResult = await submitCode(script, language);
     if (!submissionResult) throw new Error("Error submitting code");
 
+    console.log("submissionResult", submissionResult);
     // SUCCESS
     return res.status(200).json({
       status: "SUCCESS",

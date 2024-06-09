@@ -249,7 +249,7 @@
                   "items": {
                     "type": "object",
                     "properties": {
-                      "ID": {
+                      "INSTRUCTOR_ID": {
                         "type": "string"
                       },
                       "FULLNAME": {
@@ -286,7 +286,7 @@
       "Student": {
         "type": "object",
         "properties": {
-          "ID": {
+          "STUDENT_ID": {
             "type": "number"
           },
           "DOB": {
@@ -312,7 +312,7 @@
       "Student2": {
         "type": "object",
         "properties": {
-          "ID": {
+          "STUDENT_ID": {
             "type": "number"
           },
           "DOB": {
@@ -375,7 +375,7 @@
       "Instructor": {
         "type": "object",
         "properties": {
-          "ID": {
+          "INSTRUCTOR_ID": {
             "type": "number"
           },
           "FULLNAME": {

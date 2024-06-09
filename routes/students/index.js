@@ -14,10 +14,10 @@ router.get("/", async (req, res) => {
 
     connection = await dbSingleton.createConnection();
     const result = await connection.execute(`
-    	SELECT STUDENT.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME
-	    FROM STUDENT
+    	SELECT STUDENTS.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME
+	    FROM STUDENTS
 	    JOIN INSTRUCTORS
-	    ON STUDENT.INSTRUCTOR_ID = INSTRUCTORS.ID
+	    ON STUDENTS.INSTRUCTOR_ID = INSTRUCTORS.INSTRUCTOR_ID
     `);
 
     return res.status(200).send(result.rows);
@@ -49,11 +49,11 @@ router.get("/:id", async (req, res) => {
 
     const result = await connection.execute(
       `
-      SELECT STUDENT.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME
-	    FROM STUDENT
+      SELECT STUDENTS.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME
+	    FROM STUDENTS
 	    JOIN INSTRUCTORS
-	    ON STUDENT.INSTRUCTOR_ID = INSTRUCTORS.ID
-      WHERE STUDENT.ID = :id`,
+	    ON STUDENTS.INSTRUCTOR_ID = INSTRUCTORS.INSTRUCTOR_ID
+      WHERE STUDENTS.STUDENT_ID = :id`,
       [id]
     );
     const studentObj = result.rows[0];
@@ -84,7 +84,7 @@ router.post("/", async (req, res) => {
     const { FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID } = req.body;
 
     const result = await connection.execute(
-      `INSERT INTO STUDENT (ID, DOB, EMAIL, FIRST_NAME, LAST_NAME, INSTRUCTOR_ID) VALUES(STUDENT_SEQ.NEXTVAL, TO_DATE(:dob,'YYYY-MM-DD'),:email,:firstName,:lastName, :instructorId)`,
+      `INSERT INTO STUDENTS (STUDENT_ID, DOB, EMAIL, FIRST_NAME, LAST_NAME, INSTRUCTOR_ID) VALUES(STUDENT_SEQ.NEXTVAL, TO_DATE(:dob,'YYYY-MM-DD'),:email,:firstName,:lastName, :instructorId)`,
       [DOB, EMAIL, FIRST_NAME, LAST_NAME, INSTRUCTOR_ID],
       {
         autoCommit: true, // query has to be committed
@@ -94,8 +94,8 @@ router.post("/", async (req, res) => {
     // We need ID as well
     const student = await connection.execute(
       `
-    	SELECT * FROM STUDENT
-      WHERE STUDENT.EMAIL=:email
+    	SELECT * FROM STUDENTS
+      WHERE STUDENTS.EMAIL=:email
     `,
       [EMAIL]
     );
@@ -164,14 +164,14 @@ router.put("/:id", async (req, res) => {
   try {
     connection = await dbSingleton.createConnection();
     const { FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID } = req.body;
-    const { id: ID } = req.params;
+    const { id: STUDENT_ID } = req.params;
 
     // We don't care about timezone hence substr()
     const result = await connection.execute(
-      `UPDATE STUDENT
+      `UPDATE STUDENTS
       SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(substr(:dob, 1, 10),'YYYY-MM-DD'), EMAIL=:email, INSTRUCTOR_ID=:instructorId 
-      WHERE ID=:id`,
-      [FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID, ID],
+      WHERE STUDENT_ID=:id`,
+      [FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID, STUDENT_ID],
       { autoCommit: true } // commit
     );
 
@@ -216,7 +216,7 @@ router.delete("/:id", async (req, res) => {
     const { id } = req.params;
 
     const result = await connection.execute(
-      `DELETE FROM STUDENT WHERE ID=:id`,
+      `DELETE FROM STUDENTS WHERE STUDENT_ID=:id`,
       [id],
       { autoCommit: true }
     );
@@ -261,7 +261,7 @@ router.delete("/all/delete", async (req, res) => {
   try {
     connection = await dbSingleton.createConnection();
     const result = await connection.execute(
-      `DELETE from STUDENT where ID > 2`,
+      `DELETE from STUDENTS where STUDENT_ID > 2`,
       [],
       {
         autoCommit: true,

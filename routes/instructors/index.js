@@ -11,14 +11,14 @@ router.get("/", async (req, res) => {
     for (let i = 1; i <= 4; i++) {
       // Get instructor
       const instructor = await connection.execute(
-        `SELECT * FROM instructors WHERE ID=:id`,
+        `SELECT * FROM instructors WHERE INSTRUCTOR_ID=:id`,
         [i]
       );
       // Get students
       const students = await connection.execute(
         `
-              SELECT STUDENT.* FROM STUDENT
-              WHERE STUDENT.INSTRUCTOR_ID =:id
+              SELECT STUDENTS.* FROM STUDENTS
+              WHERE STUDENTS.INSTRUCTOR_ID =:id
     `,
         [i]
       );
@@ -55,12 +55,12 @@ router.get("/:id", async (req, res) => {
     connection = await dbSingleton.createConnection();
     // Get instructor
     const result = await connection.execute(
-      `SELECT * FROM instructors WHERE ID=:id`,
+      `SELECT * FROM instructors WHERE INSTRUCTOR_ID=:id`,
       [id]
     );
     // Get its students
     const students = await connection.execute(
-      `SELECT * FROM STUDENT WHERE STUDENT.INSTRUCTOR_ID=:id`,
+      `SELECT * FROM STUDENTS WHERE STUDENTS.INSTRUCTOR_ID=:id`,
       [id]
     );
     // Add students

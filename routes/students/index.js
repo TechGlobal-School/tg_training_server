@@ -56,9 +56,17 @@ router.get("/:id", async (req, res) => {
       WHERE STUDENTS.STUDENT_ID = :id`,
       [id]
     );
-    const studentObj = result.rows[0];
-    res.status(200).send(studentObj);
+    // 404
+    const rows = result?.rows;
+
+    if (rows?.length <= 0) {
+      return res.status(404).send(`Student not found with this id of ${id}`);
+    }
+    // 200
+    const studentObj = rows[0];
+    return res.status(200).send(studentObj);
   } catch (err) {
+    // 500
     console.error(err.message);
     return res.status(500).send("Error connecting to DB");
   } finally {
@@ -82,6 +90,11 @@ router.post("/", async (req, res) => {
   try {
     connection = await dbSingleton.createConnection();
     const { FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID } = req.body;
+
+    // Better check in DB but its a quick solution
+    if (![1, 2, 3, 4].includes(INSTRUCTOR_ID)) {
+      return res.status(400).send("Wrong Instructor ID, It can be 1,2,3 or 4.");
+    }
 
     const result = await connection.execute(
       `INSERT INTO STUDENTS (STUDENT_ID, DOB, EMAIL, FIRST_NAME, LAST_NAME, INSTRUCTOR_ID) VALUES(STUDENT_SEQ.NEXTVAL, TO_DATE(:dob,'YYYY-MM-DD'),:email,:firstName,:lastName, :instructorId)`,
@@ -180,7 +193,7 @@ router.put("/:id", async (req, res) => {
       throw new Error("Error updating student to DB");
     }
 
-    return res.status(201).send(`Successfully updated ${FIRST_NAME}`);
+    return res.status(200).send(`Successfully updated ${FIRST_NAME}`);
   } catch (err) {
     console.error("Error", err.message);
 
@@ -222,9 +235,9 @@ router.delete("/:id", async (req, res) => {
     );
 
     if (result && result?.rowsAffected === 0) {
-      return res.status(500).send({
+      return res.status(404).send({
         message:
-          "There is no student to delete. Tech Global and John Doe are permanent.",
+          "There is no student to delete. First 2 students 'Tech Global' and 'John Doe' are default and can't be deleted",
       });
     }
     res
@@ -233,9 +246,8 @@ router.delete("/:id", async (req, res) => {
   } catch (err) {
     if (err.errorNum === 20003) {
       return res.status(403).send({
-        message: `You're not authorized to delete ${
-          id == 1 ? "Tech Global!" : "John Doe!"
-        }`,
+        message:
+          "You're not authorized to delete first 2 default students with id of 1 and 2",
       });
     } else {
       return res.status(500).send("Error deleting student from DB");
@@ -267,16 +279,17 @@ router.delete("/all/delete", async (req, res) => {
         autoCommit: true,
       }
     );
-    console.log("result", result);
     if (!result || result?.rowsAffected === 0) {
-      throw new Error(
-        "There is no student to delete. Tech Global and John Doe are permanent."
-      );
+      return res
+        .status(404)
+        .send(
+          "There is no student to delete. Tech Global and John Doe are permanent."
+        );
     }
     res.status(200).send({ message: "Successfully deleted all users!" });
   } catch (err) {
     console.log("err", err);
-    res.status(500).send(err.message ?? "Error deleting student from DB");
+    res.status(500).send(err.message ?? "Error deleting all students from DB");
   } finally {
     if (connection) {
       // Release connection

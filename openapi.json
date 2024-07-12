@@ -225,8 +225,8 @@
     "/instructors/{id}": {
       "get": {
         "tags": ["instructors"],
-        "summary": "Find instructors by id",
-        "description": "Returns a single instructors",
+        "summary": "Find instructor by id",
+        "description": "Returns a single instructor",
         "parameters": [
           {
             "name": "id",
@@ -272,7 +272,7 @@
             "description": "Invalid id supplied"
           },
           "404": {
-            "description": "Student not found"
+            "description": "Instructor not found"
           },
           "500": {
             "description": "Error connecting to DB"

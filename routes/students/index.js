@@ -23,7 +23,9 @@ router.get("/", async (req, res) => {
     return res.status(200).send(result.rows);
   } catch (err) {
     console.error(err.message);
-    return res.status(500).send("Error getting data from DB");
+    return res.status(500).send({
+      message: 'Connection Error!'
+    });
   } finally {
     if (connection) {
       // Release connection
@@ -61,7 +63,9 @@ router.get("/:id", async (req, res) => {
     console.log("result", result);
     // 404
     if (rows?.length <= 0) {
-      return res.status(404).send(`Student not found with this id of ${id}`);
+      return res.status(404).send({
+        message: `Student not found with the STUDENT_ID: ${id}`
+      });
     }
     // 200
     const studentObj = rows[0];
@@ -69,7 +73,9 @@ router.get("/:id", async (req, res) => {
   } catch (err) {
     // 500
     console.error(err.message);
-    return res.status(500).send("Error connecting to DB");
+    return res.status(500).send({
+      message: 'Connection Error!'
+    });
   } finally {
     if (connection) {
       // Release connection
@@ -92,9 +98,11 @@ router.post("/", async (req, res) => {
     connection = await dbSingleton.createConnection();
     const { FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID } = req.body;
 
-    // Better check in DB but its a quick solution
+    // TODO Better check in DB but its a quick solution
     if (![1, 2, 3, 4].includes(INSTRUCTOR_ID)) {
-      return res.status(400).send("Wrong Instructor ID, It can be 1,2,3 or 4.");
+      return res.status(400).send({
+        message: 'Invalid INSTRUCTOR_ID! It can be 1, 2, 3 or 4.'
+      });
     }
 
     const result = await connection.execute(
@@ -114,7 +122,7 @@ router.post("/", async (req, res) => {
       [EMAIL]
     );
 
-    if (!result || !student) throw new Error("Error saving student to DB");
+    if (!result || !student) throw new Error("Connection Error!");
 
     // Note: Burak wants format of response DOB same as one posted for testing purposes
     const studentObj = student.rows?.[0];
@@ -155,7 +163,7 @@ router.post("/", async (req, res) => {
         message: "Invalid date format. The expected date format is yyyy-MM-dd.",
       });
     } else {
-      return res.status(500).send({ message: "Error saving student to DB" });
+      return res.status(500).send({ message: "Connection Error!" });
     }
   } finally {
     if (connection) {
@@ -177,35 +185,103 @@ router.put("/:id", async (req, res) => {
   let connection;
   try {
     connection = await dbSingleton.createConnection();
-    const { FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID } = req.body;
-    const { id: STUDENT_ID } = req.params;
+    const { id } = req.params;
+    const parseId = parseInt(id);
+
+    if (isNaN(parseId)) {
+      return res.status(400).send({
+        message: `Invalid STUDENT_ID!`
+      });
+    }
+
+    if (parseId === 1 || parseId === 2) {
+      return res
+        .status(403)
+        .send({
+          message: `Not authorized to update the students with the STUDENT_ID: 1 or 2`
+        });
+    }
+    
+    const { FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID } = req.body;
+
+    // TODO Better check in DB but its a quick solution
+    if (![1, 2, 3, 4].includes(INSTRUCTOR_ID)) {
+      return res.status(400).send({
+        message: 'Invalid INSTRUCTOR_ID! It can be 1, 2, 3 or 4.'
+      });
+    }
+
+    let result = await connection.execute(
+      `
+      SELECT STUDENTS.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME
+	    FROM STUDENTS
+	    JOIN INSTRUCTORS
+	    ON STUDENTS.INSTRUCTOR_ID = INSTRUCTORS.INSTRUCTOR_ID
+      WHERE STUDENTS.STUDENT_ID = :id`,
+      [id]
+    );
+    const rows = result?.rows;
+
+    console.log("result", result);
+    // 404
+    if (rows?.length <= 0) {
+      return res.status(404).send({
+        message: `Student not found with the STUDENT_ID: ${id}`
+      });
+    }
 
     // We don't care about timezone hence substr()
-    const result = await connection.execute(
+    result = await connection.execute(
       `UPDATE STUDENTS
       SET FIRST_NAME=:firstName, LAST_NAME=:lastName, DOB=TO_DATE(substr(:dob, 1, 10),'YYYY-MM-DD'), EMAIL=:email, INSTRUCTOR_ID=:instructorId 
       WHERE STUDENT_ID=:id`,
-      [FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID, STUDENT_ID],
+      [FIRST_NAME, LAST_NAME, DOB, EMAIL, INSTRUCTOR_ID, id],
       { autoCommit: true } // commit
     );
 
     // If email is correct but id incorrect or vice versa error should be given
     if (!result || result.rowsAffected === 0) {
-      throw new Error("Error updating student to DB");
+      throw new Error("Connection Error!");
     }
 
-    return res.status(200).send(`Successfully updated ${FIRST_NAME}`);
+    return res.status(200).send({
+      message: `Successfully updated the student with the STUDENT_ID: ${id}`,
+    });
   } catch (err) {
     console.error("Error", err.message);
 
-    if (err.errorNum === 2004) {
+    if (err.errorNum === 1) {
       return res.status(409).send({
         message: "The email you have entered is already in use!",
       });
-    } else {
-      return res.status(500).send({
-        message: "Error updating student to DB",
+    } else if (err.errorNum === 1400) {
+      return res.status(400).send({
+        message: "Missing field! Please fill all parameters and try again!",
       });
+    } else if (err.errorNum === 2290) {
+      return res.status(400).send({
+        message: !req.body.EMAIL.match(/[a-z0-9\-]+@[a-z]+\.[a-z]{2,3}/)
+          ? "Invalid email format. The expected format is <2+chars>@<2+chars>.<2+chars> and only digits, letters, and @.-_ characters are allowed."
+          : "Invalid character in the field.",
+      });
+    } else if (err.errorNum === 20001) {
+      return res.status(400).send({
+        message: "Invalid date. The date of birth cannot be a future date.",
+      });
+    } else if (err.errorNum === 20002) {
+      return res.status(400).send({
+        message: "Invalid date. The age limit is 100.",
+      });
+    } else if (
+      err.errorNum === 1847 ||
+      err.errorNum === 1861 ||
+      err.errorNum === 1843
+    ) {
+      return res.status(400).send({
+        message: "Invalid date format. The expected date format is yyyy-MM-dd.",
+      });
+    } else {
+      return res.status(500).send({ message: "Connection Error!" });
     }
   } finally {
     if (connection) {
@@ -231,13 +307,17 @@ router.patch("/:id", async (req, res) => {
     const parseId = parseInt(id);
 
     if (isNaN(parseId)) {
-      return res.status(400).send("Incorrect id provided");
+      return res.status(400).send({
+        message: `Invalid STUDENT_ID!`
+      });
     }
 
     if (parseId === 1 || parseId === 2) {
       return res
         .status(403)
-        .send("Not Authorized to update first 2 default students");
+        .send({
+          message: `Not authorized to update the students with the STUDENT_ID: 1 or 2`
+        });
     }
 
     const result = await connection.execute(
@@ -257,7 +337,9 @@ router.patch("/:id", async (req, res) => {
 
     // 404
     if (rows?.length <= 0) {
-      return res.status(404).send(`Student not found with this id of ${id}`);
+      return res.status(404).send({
+        message: `Student not found with the STUDENT_ID: ${id}`
+      });
     }
 
     const student = rows[0];
@@ -266,11 +348,6 @@ router.patch("/:id", async (req, res) => {
 
     // First Name
     if (req.body.FIRST_NAME) {
-      if (student.FIRST_NAME === req.body.FIRST_NAME) {
-        return res.status(304).send("Nothing has changed");
-      }
-      student.FIRST_NAME = req.body.FIRST_NAME;
-
       const result = await connection.execute(
         `UPDATE STUDENTS
         SET FIRST_NAME=:firstName 
@@ -280,22 +357,16 @@ router.patch("/:id", async (req, res) => {
       );
 
       if (!result || result.rowsAffected === 0) {
-        throw new Error("Error updating student to DB");
+        throw new Error("Connection Error!");
       }
 
       return res.status(200).json({
-        student: student,
-        message: `Student's first name updated to '${req.body.FIRST_NAME}'`,
+        message: `Successfully updated the student with the STUDENT_ID: ${id}`,
       });
     }
 
     // Last Name
     if (req.body.LAST_NAME) {
-      if (student.LAST_NAME === req.body.LAST_NAME) {
-        return res.status(304).send("Nothing has changed");
-      }
-      student.LAST_NAME = req.body.LAST_NAME;
-
       const result = await connection.execute(
         `UPDATE STUDENTS
         SET LAST_NAME=:lastName 
@@ -305,22 +376,16 @@ router.patch("/:id", async (req, res) => {
       );
 
       if (!result || result.rowsAffected === 0) {
-        throw new Error("Error updating student to DB");
+        throw new Error("Connection Error!");
       }
 
       return res.status(200).json({
-        student: student,
-        message: `Student's last name updated to '${req.body.LAST_NAME}'`,
+        message: `Successfully updated the student with the STUDENT_ID: ${id}`,
       });
     }
 
     // Email -> error
     if (req.body.EMAIL) {
-      if (student.EMAIL === req.body.EMAIL) {
-        return res.status(304).send("Nothing has changed");
-      }
-      student.EMAIL = req.body.EMAIL;
-
       const result = await connection.execute(
         `UPDATE STUDENTS
         SET EMAIL=:email 
@@ -330,22 +395,16 @@ router.patch("/:id", async (req, res) => {
       );
 
       if (!result || result.rowsAffected === 0) {
-        throw new Error("Error updating student to DB");
+        throw new Error("Connection Error!");
       }
 
       return res.status(200).json({
-        student: student,
-        message: `Student's email updated to '${req.body.EMAIL}'`,
+        message: `Successfully updated the student with the STUDENT_ID: ${id}`,
       });
     }
 
     // DOB
     if (req.body.DOB) {
-      if (student.DOB === req.body.DOB) {
-        return res.status(304).send("Nothing has changed");
-      }
-      student.DOB = req.body.DOB;
-
       const result = await connection.execute(
         `UPDATE STUDENTS
         SET DOB=TO_DATE(substr(:dob, 1, 10),'YYYY-MM-DD') 
@@ -355,12 +414,11 @@ router.patch("/:id", async (req, res) => {
       );
 
       if (!result || result.rowsAffected === 0) {
-        throw new Error("Error updating student to DB");
+        throw new Error("Connection Error!");
       }
 
       return res.status(200).json({
-        student: student,
-        message: `Student's dob updated to '${req.body.DOB}'`,
+        message: `Successfully updated the student with the STUDENT_ID: ${id}`,
       });
     }
 
@@ -369,13 +427,10 @@ router.patch("/:id", async (req, res) => {
       if (![1, 2, 3, 4].includes(req.body.INSTRUCTOR_ID)) {
         return res
           .status(400)
-          .send("Wrong Instructor ID, It can be 1,2,3 or 4.");
+          .send({
+            message: "Invalid INSTRUCTOR_ID provided! It can be 1,2,3 or 4."
+          });
       }
-
-      if (student.INSTRUCTOR_ID === req.body.INSTRUCTOR_ID) {
-        return res.status(304).send("Nothing has changed");
-      }
-      student.INSTRUCTOR_ID = req.body.INSTRUCTOR_ID;
 
       const result = await connection.execute(
         `UPDATE STUDENTS
@@ -386,12 +441,11 @@ router.patch("/:id", async (req, res) => {
       );
 
       if (!result || result.rowsAffected === 0) {
-        throw new Error("Error updating student to DB");
+        throw new Error("Connection Error");
       }
 
       return res.status(200).json({
-        student: student,
-        message: `Student's instructor id updated to '${req.body.INSTRUCTOR_ID}'`,
+        message: `Successfully updated the student with the STUDENT_ID: ${id}`,
       });
     }
 
@@ -400,14 +454,40 @@ router.patch("/:id", async (req, res) => {
     // return ???
     console.error("Error", err.message);
 
-    if (err.errorNum === 2004) {
+    console.error("Error", err.message);
+
+    if (err.errorNum === 1) {
       return res.status(409).send({
         message: "The email you have entered is already in use!",
       });
-    } else {
-      return res.status(500).send({
-        message: "Error updating student to DB",
+    } else if (err.errorNum === 1400) {
+      return res.status(400).send({
+        message: "Missing field! Please fill all parameters and try again!",
       });
+    } else if (err.errorNum === 2290) {
+      return res.status(400).send({
+        message: !req.body.EMAIL.match(/[a-z0-9\-]+@[a-z]+\.[a-z]{2,3}/)
+          ? "Invalid email format. The expected format is <2+chars>@<2+chars>.<2+chars> and only digits, letters, and @.-_ characters are allowed."
+          : "Invalid character in the field.",
+      });
+    } else if (err.errorNum === 20001) {
+      return res.status(400).send({
+        message: "Invalid date. The date of birth cannot be a future date.",
+      });
+    } else if (err.errorNum === 20002) {
+      return res.status(400).send({
+        message: "Invalid date. The age limit is 100.",
+      });
+    } else if (
+      err.errorNum === 1847 ||
+      err.errorNum === 1861 ||
+      err.errorNum === 1843
+    ) {
+      return res.status(400).send({
+        message: "Invalid date format. The expected date format is yyyy-MM-dd.",
+      });
+    } else {
+      return res.status(500).send({ message: "Connection Error!" });
     }
   } finally {
     if (connection) {
@@ -439,21 +519,20 @@ router.delete("/:id", async (req, res) => {
 
     if (result && result?.rowsAffected === 0) {
       return res.status(404).send({
-        message:
-          "There is no student to delete. First 2 students 'Tech Global' and 'John Doe' are default and can't be deleted",
+        message: `Student not found with the STUDENT_ID: ${id}`
       });
     }
     res
-      .status(200)
-      .send({ message: `Successfully deleted user with Id: ${id}` });
+      .status(204)
+      .send();
   } catch (err) {
     if (err.errorNum === 20003) {
       return res.status(403).send({
         message:
-          "You're not authorized to delete first 2 default students with id of 1 and 2",
+          "You're not authorized to delete the students with the STUDENT_ID: 1 or 2",
       });
     } else {
-      return res.status(500).send("Error deleting student from DB");
+      return res.status(500).send("Connection Error!");
     }
   } finally {
     if (connection) {
@@ -485,9 +564,9 @@ router.delete("/all/delete", async (req, res) => {
     if (!result || result?.rowsAffected === 0) {
       return res
         .status(404)
-        .send(
-          "There is no student to delete. Tech Global and John Doe are permanent."
-        );
+        .send({
+          message: "There is no student to delete. Students with the STUDENT_ID: 1 or 2 are permanent."
+        });
     }
     res.status(200).send({ message: "Successfully deleted all users!" });
   } catch (err) {

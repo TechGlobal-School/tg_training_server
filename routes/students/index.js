@@ -568,7 +568,7 @@ router.delete("/all/delete", async (req, res) => {
           message: "There is no student to delete. Students with the STUDENT_ID: 1 or 2 are permanent."
         });
     }
-    res.status(200).send({ message: "Successfully deleted all users!" });
+    res.status(200).send({ message: "Successfully deleted all students!" });
   } catch (err) {
     console.log("err", err);
     res.status(500).send(err.message ?? "Error deleting all students from DB");

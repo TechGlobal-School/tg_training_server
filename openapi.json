@@ -23,7 +23,7 @@
         "description": "Get all students",
         "responses": {
           "200": {
-            "description": "successful operation",
+            "description": "Successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -34,6 +34,9 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Student not found with the STUDENT_ID: {STUDENT_ID}"
           },
           "500": {
             "description": "Error getting data from DB"
@@ -49,7 +52,14 @@
         },
         "responses": {
           "201": {
-            "description": "John"
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Student"
+                }
+              }
+            }
           },
           "400": {
             "description": "Missing field! Please fill all parameters and try again!"
@@ -82,7 +92,7 @@
         ],
         "responses": {
           "200": {
-            "description": "successful operation",
+            "description": "Successful operation",
             "content": {
               "application/json": {
                 "schema": {
@@ -91,14 +101,11 @@
               }
             }
           },
-          "400": {
-            "description": "Invalid id supplied"
-          },
           "404": {
-            "description": "Student not found"
+            "description": "Student not found with the STUDENT_ID: {STUDENT_ID}"
           },
           "500": {
-            "description": "Error connecting to DB"
+            "description": "Connection Error!"
           }
         }
       },
@@ -120,8 +127,11 @@
           "$ref": "#/components/requestBodies/PutStudent"
         },
         "responses": {
-          "201": {
-            "description": "Name of updated student"
+          "200": {
+            "description": "Successfully updated the student with the STUDENT_ID: {STUDENT_ID}"
+          },
+          "404": {
+            "description": "Student not found with the STUDENT_ID: {STUDENT_ID}"
           },
           "409": {
             "description": "The email you have entered is already in use!"
@@ -146,14 +156,14 @@
           }
         ],
         "responses": {
-          "201": {
-            "description": "Successfully deleted user with Id id"
+          "204": {
+            "description": "204 No Content"
           },
           "403": {
-            "description": "You're not authorized to delete"
+            "description": "You're not authorized to delete the students with the STUDENT_ID: 1 or 2"
           },
           "500": {
-            "description": "Error deleting student from DB"
+            "description": "Connection Error!"
           }
         }
       }
@@ -165,34 +175,13 @@
         "description": "",
         "responses": {
           "200": {
-            "description": "successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Successfully deleted all students!"
+          },
+          "404": {
+            "description": "There is no student to delete. Students with the STUDENT_ID: 1 or 2 are permanent."
           },
           "500": {
-            "description": "successful operation",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Connection Error!"
           }
         }
       }

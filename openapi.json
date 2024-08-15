@@ -141,6 +141,51 @@
           }
         }
       },
+      "patch": {
+        "tags": ["students"],
+        "summary": "Update (patch) one or more fileds a single student",
+        "description": "Patch a single student",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "number"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "description": "Can be any field from Student Object",
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": {
+                  "$ref": "#/components/schemas/PatchStudentDOB",
+                  "$ref": "#/components/schemas/PatchStudentEmail",
+                  "$ref": "#/components/schemas/PatchStudentFirstName",
+                  "$ref": "#/components/schemas/PatchStudentLastName",
+                  "$ref": "#/components/schemas/PatchStudentInstructorId"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully updated the student with the STUDENT_ID: {STUDENT_ID}"
+          },
+          "404": {
+            "description": "Student not found with the STUDENT_ID: {STUDENT_ID}"
+          },
+          "409": {
+            "description": "The email you have entered is already in use!"
+          },
+          "500": {
+            "description": "Error saving student to DB"
+          }
+        }
+      },
       "delete": {
         "tags": ["students"],
         "summary": "Delete a single student",
@@ -379,6 +424,46 @@
                 }
               ]
             }
+          }
+        }
+      },
+      "PatchStudentDOB": {
+        "type": "object",
+        "properties": {
+          "DOB": {
+            "type": "string"
+          }
+        }
+      },
+      "PatchStudentEmail": {
+        "type": "object",
+        "properties": {
+          "EMAIL": {
+            "type": "string"
+          }
+        }
+      },
+      "PatchStudentFirstName": {
+        "type": "object",
+        "properties": {
+          "FIRST_NAME": {
+            "type": "string"
+          }
+        }
+      },
+      "PatchStudentLastName": {
+        "type": "object",
+        "properties": {
+          "LAST_NAME": {
+            "type": "string"
+          }
+        }
+      },
+      "PatchStudentInstructorId": {
+        "type": "object",
+        "properties": {
+          "INSTRUCTOR_ID": {
+            "type": "number"
           }
         }
       }

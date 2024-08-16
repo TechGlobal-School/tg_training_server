@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
   } catch (err) {
     console.error(err.message);
     return res.status(500).send({
-      message: 'Connection Error!'
+      message: "Connection Error!",
     });
   } finally {
     if (connection) {
@@ -64,7 +64,7 @@ router.get("/:id", async (req, res) => {
     // 404
     if (rows?.length <= 0) {
       return res.status(404).send({
-        message: `Student not found with the STUDENT_ID: ${id}`
+        message: `Student not found with the STUDENT_ID: ${id}`,
       });
     }
     // 200
@@ -74,7 +74,7 @@ router.get("/:id", async (req, res) => {
     // 500
     console.error(err.message);
     return res.status(500).send({
-      message: 'Connection Error!'
+      message: "Connection Error!",
     });
   } finally {
     if (connection) {
@@ -101,7 +101,7 @@ router.post("/", async (req, res) => {
     // TODO Better check in DB but its a quick solution
     if (![1, 2, 3, 4].includes(INSTRUCTOR_ID)) {
       return res.status(400).send({
-        message: 'Invalid INSTRUCTOR_ID! It can be 1, 2, 3 or 4.'
+        message: "Invalid INSTRUCTOR_ID! It can be 1, 2, 3 or 4.",
       });
     }
 
@@ -190,24 +190,22 @@ router.put("/:id", async (req, res) => {
 
     if (isNaN(parseId)) {
       return res.status(400).send({
-        message: `Invalid STUDENT_ID!`
+        message: `Invalid STUDENT_ID!`,
       });
     }
 
     if (parseId === 1 || parseId === 2) {
-      return res
-        .status(403)
-        .send({
-          message: `Not authorized to update the students with the STUDENT_ID: 1 or 2`
-        });
+      return res.status(403).send({
+        message: `Not authorized to update the students with the STUDENT_ID: 1 or 2`,
+      });
     }
-    
+
     const { FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID } = req.body;
 
     // TODO Better check in DB but its a quick solution
     if (![1, 2, 3, 4].includes(INSTRUCTOR_ID)) {
       return res.status(400).send({
-        message: 'Invalid INSTRUCTOR_ID! It can be 1, 2, 3 or 4.'
+        message: "Invalid INSTRUCTOR_ID! It can be 1, 2, 3 or 4.",
       });
     }
 
@@ -226,7 +224,7 @@ router.put("/:id", async (req, res) => {
     // 404
     if (rows?.length <= 0) {
       return res.status(404).send({
-        message: `Student not found with the STUDENT_ID: ${id}`
+        message: `Student not found with the STUDENT_ID: ${id}`,
       });
     }
 
@@ -308,16 +306,14 @@ router.patch("/:id", async (req, res) => {
 
     if (isNaN(parseId)) {
       return res.status(400).send({
-        message: `Invalid STUDENT_ID!`
+        message: `Invalid STUDENT_ID!`,
       });
     }
 
     if (parseId === 1 || parseId === 2) {
-      return res
-        .status(403)
-        .send({
-          message: `Not authorized to update the students with the STUDENT_ID: 1 or 2`
-        });
+      return res.status(403).send({
+        message: `Not authorized to update the students with the STUDENT_ID: 1 or 2`,
+      });
     }
 
     const result = await connection.execute(
@@ -329,25 +325,36 @@ router.patch("/:id", async (req, res) => {
       WHERE STUDENTS.STUDENT_ID = :id`,
       [id]
     );
-    // console.log("result", result);
 
     const rows = result?.rows;
-
-    console.log("rows", rows);
 
     // 404
     if (rows?.length <= 0) {
       return res.status(404).send({
-        message: `Student not found with the STUDENT_ID: ${id}`
+        message: `Student not found with the STUDENT_ID: ${id}`,
       });
     }
 
-    const student = rows[0];
+    // const student = rows[0];
 
     // TODO: Needs helper function to minimize the code size
 
-    // First Name
+    console.log("req.body", req.body);
+
+    if (
+      !req.body.FIRST_NAME &&
+      !req.body.LAST_NAME &&
+      !req.body.EMAIL &&
+      !req.body.DOB &&
+      !req.body.INSTRUCTOR_ID
+    ) {
+      return res.status(200).json({
+        message:
+          "Invalid body. Pass one of FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID",
+      });
+    }
     if (req.body.FIRST_NAME) {
+      // First Name
       const result = await connection.execute(
         `UPDATE STUDENTS
         SET FIRST_NAME=:firstName 
@@ -425,11 +432,9 @@ router.patch("/:id", async (req, res) => {
     // INSTRUCTOR_ID
     if (req.body.INSTRUCTOR_ID) {
       if (![1, 2, 3, 4].includes(req.body.INSTRUCTOR_ID)) {
-        return res
-          .status(400)
-          .send({
-            message: "Invalid INSTRUCTOR_ID provided! It can be 1,2,3 or 4."
-          });
+        return res.status(400).send({
+          message: "Invalid INSTRUCTOR_ID provided! It can be 1,2,3 or 4.",
+        });
       }
 
       const result = await connection.execute(
@@ -519,12 +524,10 @@ router.delete("/:id", async (req, res) => {
 
     if (result && result?.rowsAffected === 0) {
       return res.status(404).send({
-        message: `Student not found with the STUDENT_ID: ${id}`
+        message: `Student not found with the STUDENT_ID: ${id}`,
       });
     }
-    res
-      .status(204)
-      .send();
+    res.status(204).send();
   } catch (err) {
     if (err.errorNum === 20003) {
       return res.status(403).send({
@@ -562,11 +565,10 @@ router.delete("/all/delete", async (req, res) => {
       }
     );
     if (!result || result?.rowsAffected === 0) {
-      return res
-        .status(404)
-        .send({
-          message: "There is no student to delete. Students with the STUDENT_ID: 1 or 2 are permanent."
-        });
+      return res.status(404).send({
+        message:
+          "There is no student to delete. Students with the STUDENT_ID: 1 or 2 are permanent.",
+      });
     }
     res.status(200).send({ message: "Successfully deleted all students!" });
   } catch (err) {

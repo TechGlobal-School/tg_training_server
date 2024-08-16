@@ -175,6 +175,9 @@
           "200": {
             "description": "Successfully updated the student with the STUDENT_ID: {STUDENT_ID}"
           },
+          "400": {
+            "description": "Invalid body. Pass one of FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID"
+          },
           "404": {
             "description": "Student not found with the STUDENT_ID: {STUDENT_ID}"
           },

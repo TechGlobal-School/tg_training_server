@@ -49,6 +49,14 @@ router.get("/:id", async (req, res) => {
     connection = await dbSingleton.createConnection();
     let { id } = req.params;
 
+    const parseId = parseInt(id);
+
+    if (isNaN(parseId)) {
+      return res.status(400).send({
+        message: `Invalid STUDENT_ID!`,
+      });
+    }
+
     const result = await connection.execute(
       `
       SELECT STUDENTS.*, INSTRUCTORS.FULLNAME AS INSTRUCTOR_NAME

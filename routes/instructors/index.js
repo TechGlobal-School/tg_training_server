@@ -52,23 +52,36 @@ router.get("/:id", async (req, res) => {
   try {
     let { id } = req.params;
 
+    const parseId = parseInt(id);
+
+    if (isNaN(parseId)) {
+      return res.status(400).send({
+        message: `Invalid INSTRUCTOR_ID!`,
+      });
+    }
+
     connection = await dbSingleton.createConnection();
     // Get instructor
     const result = await connection.execute(
       `SELECT * FROM instructors WHERE INSTRUCTOR_ID=:id`,
       [id]
     );
-    // Get its students
-    const students = await connection.execute(
-      `SELECT * FROM STUDENTS WHERE STUDENTS.INSTRUCTOR_ID=:id`,
-      [id]
-    );
-    // Add students
+    
     const instructor = result.rows[0];
-    instructor.STUDENTS = students.rows;
 
-    if (!instructor) {
-      throw new Error("Error getting instructor");
+    if (instructor) {
+      // Get its students
+      const students = await connection.execute(
+        `SELECT * FROM STUDENTS WHERE STUDENTS.INSTRUCTOR_ID=:id`,
+        [id]
+      );
+      // Add students
+      instructor.STUDENTS = students.rows;
+    } 
+    else {
+      return res.status(404).send({
+        message: `Instructor not found with the INSTRUCTOR_ID: ${id}`,
+      });
     }
 
     res.status(200).send(instructor);

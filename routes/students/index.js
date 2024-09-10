@@ -211,7 +211,7 @@ router.put("/:id", async (req, res) => {
     const { FIRST_NAME, LAST_NAME, EMAIL, DOB, INSTRUCTOR_ID } = req.body;
 
     // TODO Better check in DB but its a quick solution
-    if (![1, 2, 3, 4].includes(INSTRUCTOR_ID)) {
+    if (![1, 2, 3, 4].includes(parseInt(INSTRUCTOR_ID))) {
       return res.status(400).send({
         message: "Invalid INSTRUCTOR_ID! It can be 1, 2, 3 or 4.",
       });
